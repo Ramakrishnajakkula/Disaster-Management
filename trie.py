@@ -31,8 +31,6 @@ class Trie:
             node = node.children[char]
         return True
     
-
-    
     
     """def get_words_with_prefix(self, prefix):
         def dfs(node, path, results):
@@ -49,52 +47,6 @@ class Trie:
             node = node.children[char]
         dfs(node, prefix, results)
         return results"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

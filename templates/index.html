@@ -18,8 +18,7 @@
             <button onclick="searchHistory()">Search</button>
         </div>
         <div class="chat-box" id="chat-box"></div>
-        <input type="text" id="user-input" placeholder="Type your message..."
-            onkeydown="if(event.keyCode === 13) sendMessage()">
+        <input type="text" id="user-input" placeholder="Type your message..." onkeydown="if(event.keyCode === 13) sendMessage()">
         <button onclick="sendMessage()"><i class="bi bi-arrow-right" style="font-size: 24px;"></i></button>
     </div>
     <script>
@@ -30,54 +29,57 @@
                 fetch('/chat', {
                     method: 'POST',
                     body: JSON.stringify({ message: userInput }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'Content-Type': 'application/json' }
                 })
                 .then(response => response.json())
                 .then(data => {
-                    addMessage("bot", data.response);
+                    addMessage("bot", data.response, userInput); // Pass user input for feedback
                 })
                 .catch(error => console.error('Error:', error));
                 document.getElementById("user-input").value = "";
             }
         }
 
-        function addMessage(sender, message) {
+        function addMessage(sender, message, userMessage = "") {
             var chatBox = document.getElementById("chat-box");
             var messageElement = document.createElement("div");
             messageElement.classList.add("message", sender + "-message");
             messageElement.innerHTML = message;
             chatBox.appendChild(messageElement);
+
+            // If the message is from the bot, add feedback options
+            if (sender === "bot") {
+                var feedbackElement = document.createElement("div");
+                feedbackElement.classList.add("feedback-options");
+                feedbackElement.innerHTML = `
+                    <button onclick="sendFeedback(true, '${userMessage}')">👍</button>
+                    <button onclick="sendFeedback(false, '${userMessage}')">👎</button>
+                `;
+                chatBox.appendChild(feedbackElement);
+            }
+
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        function showHistory() {
-        fetch('/history')
-        .then(response => response.json())
-        .then(data => {
-            var chatBox = document.getElementById("chat-box");
-            chatBox.innerHTML = "";
-            data.forEach(item => {
-                var historyUserMessage = document.createElement("div");
-                historyUserMessage.classList.add("message", "user-message");
-                historyUserMessage.innerHTML = item.message;
-                historyUserMessage.onclick = function() {
-                    alert("Response: " + item.response);
-                };
-                chatBox.appendChild(historyUserMessage);
+        function sendFeedback(isHelpful, message) {
+    fetch('/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, is_helpful: isHelpful })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Display the feedback status message in the chat box
+        var chatBox = document.getElementById("chat-box");
+        var feedbackStatusElement = document.createElement("div");
+        feedbackStatusElement.classList.add("message", "feedback-status");
+        feedbackStatusElement.innerHTML = data.status; // Display response message
+        chatBox.appendChild(feedbackStatusElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    })
+    .catch(error => console.error('Error:', error));
+}
 
-                var clearButton = document.createElement("button");
-                clearButton.classList.add("clear-history-button");
-                clearButton.innerHTML = "Clear";
-                clearButton.onclick = function() {
-                    clearHistory(item.message);
-                };
-                chatBox.appendChild(clearButton);
-            });
-        })
-        .catch(error => console.error('Error:', error));
-    }
 
         function searchHistory() {
             var query = document.getElementById("search-input").value.toLowerCase();
@@ -108,28 +110,24 @@
         }
 
         function clearHistory(message) {
-        fetch('/clear_history', {
-            method: 'POST',
-            body: JSON.stringify({ message: message }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                showHistory();
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
+            fetch('/clear_history', {
+                method: 'POST',
+                body: JSON.stringify({ message: message }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    searchHistory();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
 
         function logout() {
             fetch('/logout', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             })
             .then(response => {
                 if (response.ok) {
